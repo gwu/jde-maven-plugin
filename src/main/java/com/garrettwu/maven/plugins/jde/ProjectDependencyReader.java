@@ -8,12 +8,15 @@ import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 
 /**
  * Reads dependencies from a maven project.
  */
 public class ProjectDependencyReader {
+  /** The maven logger. */
+  private final Log mLog;
   /** The maven project to read dependencies for. */
   private final MavenProject mMavenProject;
   /** A factory for creating project dependencies from artifacts. */
@@ -22,20 +25,13 @@ public class ProjectDependencyReader {
   /**
    * Creates a new <code>ProjectDependencyReader</code> instance.
    *
-   * @param mavenProject The maven project to read dependencies for.
-   */
-  public ProjectDependencyReader(MavenProject mavenProject) {
-    this(mavenProject, new ProjectDependencyFactory());
-  }
-
-  /**
-   * Creates a new <code>ProjectDependencyReader</code> instance.
-   *
+   * @param log The maven logger.
    * @param mavenProject The maven project to read dependencies for.
    * @param projectDependencyFactory A factory for creating project dependencies from artifacts.
    */
-  public ProjectDependencyReader(
-      MavenProject mavenProject, ProjectDependencyFactory projectDependencyFactory) {
+  public ProjectDependencyReader(Log log, MavenProject mavenProject,
+      ProjectDependencyFactory projectDependencyFactory) {
+    mLog = log;
     mMavenProject = mavenProject;
     mProjectDependencyFactory = projectDependencyFactory;
   }
@@ -52,7 +48,7 @@ public class ProjectDependencyReader {
     // only run 'mvn compile', this method won't return test-scope dependencies.
     //
     // TODO: Should we explicitly run the compile phase before we call this method?
-    Set<?> dependencyArtifacts = mMavenProject.getArtifacts();
+    Set<?> dependencyArtifacts = mMavenProject.getDependencyArtifacts();
 
     // Convert the artifacts to project dependencies.
     Collection<ProjectDependency> dependencies
@@ -63,8 +59,11 @@ public class ProjectDependencyReader {
             + dependencyArtifact.getClass().getName()
             + " in result from MavenProject.getArtifacts().");
       }
-      dependencies.add(
-          mProjectDependencyFactory.createFromArtifact((Artifact) dependencyArtifact));
+      ProjectDependency dependency
+          = mProjectDependencyFactory.createFromArtifact((Artifact) dependencyArtifact);
+      if (null != dependency) {
+        dependencies.add(dependency);
+      }
     }
     return dependencies;
   }

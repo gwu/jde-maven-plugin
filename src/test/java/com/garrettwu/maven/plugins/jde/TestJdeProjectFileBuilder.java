@@ -17,7 +17,7 @@ public class TestJdeProjectFileBuilder {
 
     // Configure the builder.
     Collection<ProjectDependency> dependencies = new ArrayList<ProjectDependency>();
-    dependencies.add(new ProjectDependency("a", "b", "c"));
+    dependencies.add(new ProjectDependency("a", "b", "c", "x", "y", "z"));
     builder.withDependencies(dependencies);
 
     // Build a project file.

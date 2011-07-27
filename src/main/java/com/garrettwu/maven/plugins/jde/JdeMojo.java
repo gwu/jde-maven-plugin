@@ -7,6 +7,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -14,24 +19,46 @@ import org.apache.maven.project.MavenProject;
 /**
  * Goal which generates a prj.el file used by the Emacs JDE package.
  *
- * <p>The prj.el file is like an eclipse .project file that contains metadata about the project,
- * such as the classpath, where to find source code and javadocs for dependencies, etc.</p>
- *
  * @goal jde
+ * @requiresDependencyResolution compile
  */
 public class JdeMojo extends AbstractMojo {
+  /**
+   * A factory for maven artifacts.
+   *
+   * @component
+   */
+  private ArtifactFactory mArtifactFactory;
+
+  /**
+   * A utility that resolves artifacts (possibly downloading into the local repository).
+   *
+   * @component
+   */
+  private ArtifactResolver mArtifactResolver;
+
+  /**
+   * The local maven repository.
+   *
+   * @parameter default-value="${localRepository}"
+   */
+  private ArtifactRepository mLocalArtifactRepository;
+
   /**
    * The maven project this mojo is working on.
    *
    * @parameter property="mavenProject" default-value="${project}"
+   * @required
+   * @readonly
    */
   private MavenProject mMavenProject;
 
   /**
    * Location of the prj.el file to generate.
    *
-   * @parameter property="projectFile" expression="jde.project.file" default-value="${basedir}/prj.el"
+   * @parameter property="projectFile" expression="${jde.project.file}" default-value="${basedir}/prj.el"
    * @required
+   * @readonly
    */
   private File mProjectFile;
 
@@ -63,20 +90,26 @@ public class JdeMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException {
     // Make sure we know where to generate the jde project file.
     if (null == mProjectFile) {
-      throw new MojoExecutionException("Required property jde.project.file was not set.");
-    }
-
-    // Create parent directories as needed.
-    if (!mProjectFile.exists()) {
-      mProjectFile.mkdirs();
+      throw new MojoExecutionException("Required property ${jde.project.file} was not set.");
     }
 
     // Get the list of dependencies for the project.
-    ProjectDependencyReader dependencyReader = new ProjectDependencyReader(mMavenProject);
+    ProjectDependencyFactory projectDependencyFactory = new ProjectDependencyFactory(
+        getLog(), mArtifactFactory, mArtifactResolver, mLocalArtifactRepository, mMavenProject);
+    ProjectDependencyReader dependencyReader
+        = new ProjectDependencyReader(getLog(), mMavenProject, projectDependencyFactory);
     Collection<ProjectDependency> dependencies = dependencyReader.getDependencies();
+
+    // Resolve the dependencies' sources.
+    getLog().debug("Dependencies:");
+    for (ProjectDependency dependency : dependencies) {
+      getLog().debug(dependency.toString());
+    }
+
 
     // Build a project file.
     JdeProjectFileBuilder projectFileBuilder = new JdeProjectFileBuilder()
+        .withMavenProject(mMavenProject)
         .withDependencies(dependencies);
     JdeProjectFile projectFile = projectFileBuilder.build();
 

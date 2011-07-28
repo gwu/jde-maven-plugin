@@ -129,6 +129,7 @@ public class ProjectDependencyFactory extends MavenClient {
    *
    * @param jarFile The jar to unpack.
    * @param targetDirectory The directory to put the unpacked contents in.
+   * @throws IOException If there is an error.
    */
   private void unpackJar(File jarFile, File targetDirectory) throws IOException {
     getLog().info("Unpacking javadoc jar " + jarFile.getPath()

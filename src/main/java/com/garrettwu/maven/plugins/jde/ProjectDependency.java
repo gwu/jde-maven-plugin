@@ -2,8 +2,6 @@
 
 package com.garrettwu.maven.plugins.jde;
 
-import org.apache.maven.artifact.Artifact;
-
 /**
  * A project dependency declared as part of a maven project.
  */

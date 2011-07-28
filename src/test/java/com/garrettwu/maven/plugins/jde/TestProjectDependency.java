@@ -5,7 +5,6 @@ package com.garrettwu.maven.plugins.jde;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
-import org.apache.maven.artifact.Artifact;
 import org.junit.Test;
 
 public class TestProjectDependency {

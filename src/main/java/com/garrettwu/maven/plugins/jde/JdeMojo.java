@@ -103,7 +103,11 @@ public class JdeMojo extends AbstractMojo {
     mJavadocDir = javadocDir;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Executes the plugin's goal to generate a JDE project file.
+   *
+   * @throws MojoExecutionException If there is a fatal error during execution of the plugin.
+   */
   @Override
   public void execute() throws MojoExecutionException {
     // Make sure we know where to generate the jde project file.

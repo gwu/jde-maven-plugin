@@ -43,6 +43,7 @@ public class JdeProjectFileBuilder {
   /**
    * Sets the maven dependencies for the project.
    *
+   * @param dependencies The maven project dependencies.
    * @return This builder instance so you can chain configuration method calls.
    */
   public JdeProjectFileBuilder withDependencies(Collection<ProjectDependency> dependencies) {

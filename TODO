@@ -1,0 +1,21 @@
+(c) Copyright 2011 Garrett Wu
+
+
+Bugs:
+
+* Javadoc artifacts are unpacked to a directory named according to the
+  artifactId.  If a project depends on two artifacts with the same
+  artifactId, some javadoc files may be clobbered.
+
+
+Features:
+
+* Resolve javadoc directories using an external configuration file, so
+  users can manually specify a javadoc directory or URL even if there
+  was no javadoc artifact published to the repository.
+
+* Resolve source directories using an external configuration file, so
+  users can manually specify a source directory even if there was no
+  source artifact published to the repository.
+
+* Make the prj.el file more readable (pretty-print the generated lisp).

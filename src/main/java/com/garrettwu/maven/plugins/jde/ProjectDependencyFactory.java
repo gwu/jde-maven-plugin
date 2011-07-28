@@ -12,6 +12,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
 
+import com.google.common.io.Files;
+
 /**
  * A factory capable of creating project dependencies from a maven project.
  */
@@ -107,6 +109,7 @@ public class ProjectDependencyFactory extends MavenClient {
           getLocalArtifactRepository());
     } catch (AbstractArtifactResolutionException e) {
       getLog().info("Unable to find javadoc for artifact: " + artifact.toString());
+      return null;
     }
     File file = javadocJarArtifact.getFile();
     if (null == file || !file.exists()) {
@@ -119,6 +122,7 @@ public class ProjectDependencyFactory extends MavenClient {
       unpackJar(file, artifactJavadocDir);
     } catch (IOException e) {
       getLog().error("Unable to unpack javadoc jar for artifact: " + artifact.toString(), e);
+      return null;
     }
 
     return artifactJavadocDir.getPath();
@@ -132,6 +136,10 @@ public class ProjectDependencyFactory extends MavenClient {
    * @throws IOException If there is an error.
    */
   private void unpackJar(File jarFile, File targetDirectory) throws IOException {
+    if (targetDirectory.exists()) {
+      getLog().info("Replacing existing javadoc directory: " + targetDirectory.getPath());
+      Files.deleteRecursively(targetDirectory);
+    }
     if (!targetDirectory.mkdirs()) {
       throw new IOException("Could not create directory: " + targetDirectory.getPath());
     }

@@ -3,7 +3,7 @@
 
   <groupId>com.garrettwu.maven.plugins</groupId>
   <artifactId>jde-maven-plugin</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>jde-maven-plugin</name>
@@ -75,7 +75,7 @@
     <dependency>
       <groupId>com.garrettwu.lisp</groupId>
       <artifactId>gwu-lisp</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

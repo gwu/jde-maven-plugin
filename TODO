@@ -10,12 +10,11 @@ Bugs:
 
 Features:
 
-* Resolve javadoc directories using an external configuration file, so
-  users can manually specify a javadoc directory or URL even if there
-  was no javadoc artifact published to the repository.
-
 * Resolve source directories using an external configuration file, so
   users can manually specify a source directory even if there was no
   source artifact published to the repository.
 
 * Make the prj.el file more readable (pretty-print the generated lisp).
+
+* Display a summary of the unavailable source paths or javadoc paths
+  at the end of execution.

@@ -20,16 +20,27 @@ import com.google.common.io.Files;
 public class ProjectDependencyFactory extends MavenClient {
   /** The directory where javadoc should be unpacked. */
   private final File mJavadocDir;
+  /** The mapping between artifact names and user-defined javadoc paths. */
+  private final UserPathMapping mJavadocUserPathMapping;
 
   /**
    * Creates a new <code>ProjectDependencyFactory</code> instance.
    *
    * @param mavenEnvironment The maven environment.
    * @param javadocDir The directory to unpack javadoc contents to.
+   * @param javadocUserPathMapping A mapping from artifact names to their javadoc locations.
    */
-  public ProjectDependencyFactory(MavenEnvironment mavenEnvironment, File javadocDir) {
+  public ProjectDependencyFactory(MavenEnvironment mavenEnvironment, File javadocDir,
+      UserPathMapping javadocUserPathMapping) {
     super(mavenEnvironment);
+    if (null == javadocDir) {
+      throw new IllegalArgumentException("javadocDir may not be null");
+    }
+    if (null == javadocUserPathMapping) {
+      throw new IllegalArgumentException("javadocUserPathMapping may not be null");
+    }
     mJavadocDir = javadocDir;
+    mJavadocUserPathMapping = javadocUserPathMapping;
   }
 
   /**
@@ -98,6 +109,11 @@ public class ProjectDependencyFactory extends MavenClient {
    * @return A url or path to the javadoc (or null if unknown).
    */
   private String getJavadocPath(Artifact artifact) {
+    // First try the custom mapping provided by the user.
+    if (mJavadocUserPathMapping.contains(Artifacts.getName(artifact))) {
+      return mJavadocUserPathMapping.get(Artifacts.getName(artifact));
+    }
+
     // Get the javadoc jar artifact.
     Artifact javadocJarArtifact = getArtifactFactory().createArtifactWithClassifier(
         artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),

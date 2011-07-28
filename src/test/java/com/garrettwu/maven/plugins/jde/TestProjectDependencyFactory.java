@@ -80,7 +80,8 @@ public class TestProjectDependencyFactory {
 
     // Create the project dependency.
     File javadocDir = new File(mTempDir, "javadocs");
-    ProjectDependencyFactory factory = new ProjectDependencyFactory(mavenEnvironment, javadocDir);
+    ProjectDependencyFactory factory = new ProjectDependencyFactory(
+        mavenEnvironment, javadocDir, new UserPathMapping());
     ProjectDependency dependency = factory.createFromArtifact(artifact);
 
     mavenEnvironment.verify();

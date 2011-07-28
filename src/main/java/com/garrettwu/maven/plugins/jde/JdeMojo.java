@@ -3,14 +3,13 @@
 package com.garrettwu.maven.plugins.jde;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -72,6 +71,14 @@ public class JdeMojo extends AbstractMojo {
   private File mJavadocDir;
 
   /**
+   * A java properties file containing a mapping from groupId:artifactId:version to its javadoc.
+   *
+   * @parameter property="javadocPathsFile" expression="${jde.javadoc.paths}" default-value="${env.HOME}/.jde/javadoc.properties"
+   * @required
+   */
+  private File mJavadocPathsFile;
+
+  /**
    * Sets the maven project this mojo works over.
    *
    * <p>The plugin framework will call this method with the correct maven project.</p>
@@ -104,6 +111,18 @@ public class JdeMojo extends AbstractMojo {
   }
 
   /**
+   * The java properties file containing a mapping from artifact name
+   * (groupId:artifactId:version) to its javadoc location.
+   *
+   * <p>The javadoc location may be a filesystem path or a URL.</p>
+   *
+   * @param javadocPathsFile a <code>File</code> value
+   */
+  public void setJavadocPathsFile(File javadocPathsFile) {
+    mJavadocPathsFile = javadocPathsFile;
+  }
+
+  /**
    * Executes the plugin's goal to generate a JDE project file.
    *
    * @throws MojoExecutionException If there is a fatal error during execution of the plugin.
@@ -123,25 +142,59 @@ public class JdeMojo extends AbstractMojo {
     MavenEnvironment mavenEnvironment = new DefaultMavenEnvironment(
         getLog(), mMavenProject, mArtifactFactory, mArtifactResolver, mLocalArtifactRepository);
 
-    getLog().debug("Resolving project dependencies...");
+    UserPathMapping javadocUserPathMapping = new UserPathMapping();
+    if (null != mJavadocPathsFile && mJavadocPathsFile.exists()) {
+      getLog().info("Loading user path mapping for javadocs: " + mJavadocPathsFile.getPath());
+      try {
+        loadUserPathMapping(javadocUserPathMapping, mJavadocPathsFile);
+      } catch (IOException e) {
+        throw new MojoExecutionException(
+            "Unable to load javadoc paths from " + mJavadocPathsFile.getPath(), e);
+      }
+    } else {
+      getLog().debug("No user path mapping for javadocs specified.");
+    }
+
+    getLog().info("Resolving project dependencies...");
     ProjectDependencyFactory dependencyFactory
-        = new ProjectDependencyFactory(mavenEnvironment, mJavadocDir);
+        = new ProjectDependencyFactory(mavenEnvironment, mJavadocDir, javadocUserPathMapping);
     ProjectDependencyReader dependencyReader
         = new ProjectDependencyReader(mavenEnvironment, dependencyFactory);
     Collection<ProjectDependency> dependencies = dependencyReader.getDependencies();
 
-    getLog().debug("Building a JDE project file...");
+    getLog().info("Building a JDE project file...");
     JdeProjectFileBuilder jdeProjectFileBuilder = new JdeProjectFileBuilder()
         .withMavenProject(mMavenProject)
         .withDependencies(dependencies);
     JdeProjectFile jdeProjectFile = jdeProjectFileBuilder.build();
 
-    getLog().debug("Writing the JDE project file...");
+    getLog().info("Writing the JDE project file...");
     try {
       writeProjectFile(jdeProjectFile, mProjectFile);
     } catch (IOException e) {
       throw new MojoExecutionException(
           "Error writing project file to " + mProjectFile.getPath(), e);
+    }
+  }
+
+  /**
+   * Loads a user path file.
+   *
+   * @param userPathMapping The target mapping for the loaded file.
+   * @param userPathFile The file containing the mapping to load.
+   * @return The user path mapping loaded from the file.
+   * @throws IOException If there is an error.
+   */
+  private static void loadUserPathMapping(UserPathMapping userPathMapping, File userPathFile)
+      throws IOException {
+    FileInputStream fileInputStream = null;
+    try {
+      fileInputStream = new FileInputStream(userPathFile);
+      userPathMapping.load(fileInputStream);
+    } finally {
+      if (null != fileInputStream) {
+        fileInputStream.close();
+      }
     }
   }
 

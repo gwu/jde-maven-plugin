@@ -159,4 +159,10 @@
       </plugin>
     </plugins>
   </reporting>
+
+  <scm>
+    <connection>scm:git:git://github.com/gwu/jde-maven-plugin.git</connection>
+    <url>scm:git:git://github.com/gwu/jde-maven-plugin.git</url>
+    <developerConnection>scm:git:git://github.com/gwu/jde-maven-plugin.git</developerConnection>
+  </scm>
 </project>

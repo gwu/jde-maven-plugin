@@ -1,15 +1,37 @@
 (c) Copyright 2011 Garrett Wu
 
 
-     jde-maven-plugin - A maven plugin for Emacs JDE users.
+jde-maven-plugin - A maven plugin for Emacs JDE users.
 
 
-This project contains a plugin for maven that integrates with the
-Emacs JDE package.  In particular, the jde:jde goal generates a JDE
-project file (named prj.el by default) in the ${basedir} of the maven
-project.  The JDE project file is read automatically by the Emacs JDE
-package when a Java file is opened.  It contains the list of
-directories containing the source code, classes, jars, and javadoc
-files for the project and its dependencies.
+    This project contains a plugin for maven that integrates with the
+    Emacs JDE package.  In particular, the jde:jde goal generates a
+    JDE project file (named prj.el by default) in the ${basedir} of
+    the maven project.  The JDE project file is read automatically by
+    the Emacs JDE package when a Java file is opened.  It contains the
+    list of directories containing the source code, classes, jars, and
+    javadoc files for the project and its dependencies.
 
-Think of it like the eclipse:eclipse goal for Emacs JDE.
+    Think of it like the eclipse:eclipse goal for Emacs JDE.
+
+
+To build the plugin:
+
+    Run 'mvn package' to build target/jde-maven-plugin-${version}.jar.
+
+
+To install the plugin:
+
+    Run 'mvn install' to install to your local maven repository.
+
+
+After installing, to use the plugin in another maven project:
+
+    Run 'mvn com.garrettwu.maven.plugins:jde-maven-plugin:jde' to
+    generate a 'prj.el' file.
+
+
+Customizing behavior:
+
+    See com.garrettwu.maven.plugins.jde.JdeMojo.java for a list of
+    properties and their usage.

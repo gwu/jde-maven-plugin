@@ -118,7 +118,7 @@ public class ProjectDependencyFactory extends MavenClient {
     try {
       unpackJar(file, artifactJavadocDir);
     } catch (IOException e) {
-      getLog().error("Unable to unpack javadoc jar for artifact: " + artifact.toString());
+      getLog().error("Unable to unpack javadoc jar for artifact: " + artifact.toString(), e);
     }
 
     return artifactJavadocDir.getPath();
@@ -132,6 +132,9 @@ public class ProjectDependencyFactory extends MavenClient {
    * @throws IOException If there is an error.
    */
   private void unpackJar(File jarFile, File targetDirectory) throws IOException {
+    if (!targetDirectory.mkdirs()) {
+      throw new IOException("Could not create directory: " + targetDirectory.getPath());
+    }
     getLog().info("Unpacking javadoc jar " + jarFile.getPath()
         + " into " + targetDirectory.getPath());
     JarFile jar = new JarFile(jarFile);
@@ -139,7 +142,7 @@ public class ProjectDependencyFactory extends MavenClient {
       JarEntry entry = entries.nextElement();
       File outputFile = new File(targetDirectory, entry.getName());
       if (entry.isDirectory()) {
-        if (!outputFile.mkdir()) {
+        if (!outputFile.mkdirs()) {
           throw new IOException("Could not make directory: " + outputFile.getPath());
         }
       } else {

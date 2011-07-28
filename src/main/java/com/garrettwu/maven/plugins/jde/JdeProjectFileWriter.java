@@ -64,12 +64,7 @@ public class JdeProjectFileWriter implements Closeable {
                                 new LispQuotedElement(
                                     new LispList(
                                         Lists.transform(projectFile.getSourcePaths(),
-                                            new Function<String, LispElement>() {
-                                              @Override
-                                              public LispElement apply(String from) {
-                                                return new LispString(from);
-                                              }
-                                            })))))))),
+                                            new StringToLispTransform())))))))),
 
             // Print the class paths.
             new LispQuotedElement(
@@ -83,12 +78,7 @@ public class JdeProjectFileWriter implements Closeable {
                                 new LispQuotedElement(
                                     new LispList(
                                         Lists.transform(projectFile.getClassPaths(),
-                                            new Function<String, LispElement>() {
-                                              @Override
-                                              public LispElement apply(String from) {
-                                                return new LispString(from);
-                                              }
-                                            })))))))),
+                                            new StringToLispTransform())))))))),
 
             // Print the javadoc paths.
             new LispQuotedElement(
@@ -102,16 +92,7 @@ public class JdeProjectFileWriter implements Closeable {
                                 new LispQuotedElement(
                                     new LispList(
                                         Lists.transform(projectFile.getJavadocPaths(),
-                                            new Function<String, LispElement>() {
-                                              @Override
-                                              public LispElement apply(String from) {
-                                                return new LispList(
-                                                    Arrays.<LispElement>asList(
-                                                        new LispString("User (javadoc)"),
-                                                        new LispString(from),
-                                                        new LispIdentifier("nil")));
-                                              }
-                                            }))))))))));
+                                            new JdeJavadocLispTransform()))))))))));
 
     // Print out the variables
     mPrintWriter.println(setVariablesElement.toString());
@@ -130,8 +111,44 @@ public class JdeProjectFileWriter implements Closeable {
 
   /** {@inheritDoc} */
   @Override
-  public void finalize() throws Throwable {
+  protected void finalize() throws Throwable {
     close();
     super.finalize();
+  }
+
+  /**
+   * A function that transforms a String into a Lisp string.
+   */
+  private static class StringToLispTransform implements Function<String, LispElement> {
+    /** {@inheritDoc} */
+    @Override
+    public LispElement apply(String from) {
+      return new LispString(from);
+    }
+  }
+
+  /**
+   * A function that transforms a path to a javadoc directory into a Lisp element
+   * suitable for the JDE javadoc variable setting in emacs.
+   */
+  private static class JdeJavadocLispTransform implements Function<String, LispElement> {
+    /**
+     * Each javadoc path string must be transformed into an lisp list for JDE.
+     *
+     * <pre>
+     * ("User (javadoc)" "/path/to/javadoc" nil)
+     * </pre>
+     *
+     * @param javadocDirPath A path to a directory of javadoc files.
+     * @return A Lisp element that the JDE emacs package can read.
+     */
+    @Override
+    public LispElement apply(String javadocDirPath) {
+      return new LispList(
+          Arrays.<LispElement>asList(
+              new LispString("User (javadoc)"),
+              new LispString(javadocDirPath),
+              new LispIdentifier("nil")));
+    }
   }
 }

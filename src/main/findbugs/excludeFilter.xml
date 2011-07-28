@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+  (c) Copyright 2011 Garrett Wu
+-->
+<FindBugsFilter>
+  <!-- The maven plugin framework will set these fields with reflection,
+       but findbugs thinks they are never set. -->
+  <Match>
+    <Class name="com.garrettwu.maven.plugins.jde.JdeMojo"/>
+    <Or>
+      <Field name="mArtifactFactory"/>
+      <Field name="mArtifactResolver"/>
+      <Field name="mLocalArtifactRepository"/>
+    </Or>
+    <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+  </Match>
+</FindBugsFilter>

@@ -139,7 +139,9 @@ public class ProjectDependencyFactory extends MavenClient {
       JarEntry entry = entries.nextElement();
       File outputFile = new File(targetDirectory, entry.getName());
       if (entry.isDirectory()) {
-        outputFile.mkdir();
+        if (!outputFile.mkdir()) {
+          throw new IOException("Could not make directory: " + outputFile.getPath());
+        }
       } else {
         FileUtils.copyInputStreamToFile(jar.getInputStream(entry), outputFile);
       }

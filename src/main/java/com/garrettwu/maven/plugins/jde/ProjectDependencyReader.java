@@ -8,31 +8,24 @@ import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 
 /**
  * Reads dependencies from a maven project.
  */
-public class ProjectDependencyReader {
-  /** The maven logger. */
-  private final Log mLog;
-  /** The maven project to read dependencies for. */
-  private final MavenProject mMavenProject;
+public class ProjectDependencyReader extends MavenClient {
   /** A factory for creating project dependencies from artifacts. */
   private final ProjectDependencyFactory mProjectDependencyFactory;
 
   /**
    * Creates a new <code>ProjectDependencyReader</code> instance.
    *
-   * @param log The maven logger.
-   * @param mavenProject The maven project to read dependencies for.
+   * @param mavenEnvironment The maven environment.
    * @param projectDependencyFactory A factory for creating project dependencies from artifacts.
    */
-  public ProjectDependencyReader(Log log, MavenProject mavenProject,
+  public ProjectDependencyReader(MavenEnvironment mavenEnvironment,
       ProjectDependencyFactory projectDependencyFactory) {
-    mLog = log;
-    mMavenProject = mavenProject;
+    super(mavenEnvironment);
     mProjectDependencyFactory = projectDependencyFactory;
   }
 
@@ -48,7 +41,7 @@ public class ProjectDependencyReader {
     // only run 'mvn compile', this method won't return test-scope dependencies.
     //
     // TODO: Should we explicitly run the compile phase before we call this method?
-    Set<?> dependencyArtifacts = mMavenProject.getDependencyArtifacts();
+    Set<?> dependencyArtifacts = getCurrentProject().getDependencyArtifacts();
 
     // Convert the artifacts to project dependencies.
     Collection<ProjectDependency> dependencies

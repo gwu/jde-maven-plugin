@@ -1,2 +1,2 @@
 (jde-project-file-version "1.0")
-(jde-set-variables '(jde-sourcepath (append jde-sourcepath '("/my/source" "/your/source"))) '(jde-global-classpath (append jde-global-classpath '("/my/classes" "/my/jar"))) '(jde-help-docsets (append jde-help-docsets '("/a/path" "http://a.url"))))
+(jde-set-variables '(jde-sourcepath (append jde-sourcepath '("/my/source" "/your/source"))) '(jde-global-classpath (append jde-global-classpath '("/my/classes" "/my/jar"))) '(jde-help-docsets (append jde-help-docsets '(("User (javadoc)" "/a/path" nil) ("User (javadoc)" "http://a.url" nil)))))

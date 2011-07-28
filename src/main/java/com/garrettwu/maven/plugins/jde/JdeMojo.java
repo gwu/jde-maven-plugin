@@ -41,6 +41,8 @@ public class JdeMojo extends AbstractMojo {
    * The local maven repository.
    *
    * @parameter default-value="${localRepository}"
+   * @required
+   * @readonly
    */
   private ArtifactRepository mLocalArtifactRepository;
 
@@ -58,9 +60,16 @@ public class JdeMojo extends AbstractMojo {
    *
    * @parameter property="projectFile" expression="${jde.project.file}" default-value="${basedir}/prj.el"
    * @required
-   * @readonly
    */
   private File mProjectFile;
+
+  /**
+   * Directory where javadocs for dependencies should unpacked.
+   *
+   * @parameter property="javadocDir" expression="${jde.javadoc.dir}" default-value="${basedir}/.jde/javadoc"
+   * @required
+   */
+  private File mJavadocDir;
 
   /**
    * Sets the maven project this mojo works over.
@@ -85,6 +94,15 @@ public class JdeMojo extends AbstractMojo {
     mProjectFile = projectFile;
   }
 
+  /**
+   * The directory used to unpack the javadoc for project dependencies.
+   *
+   * @param javadocDir The directory to unpack javadoc into.
+   */
+  public void setJavadocDir(File javadocDir) {
+    mJavadocDir = javadocDir;
+  }
+
   /** {@inheritDoc} */
   @Override
   public void execute() throws MojoExecutionException {
@@ -92,43 +110,53 @@ public class JdeMojo extends AbstractMojo {
     if (null == mProjectFile) {
       throw new MojoExecutionException("Required property ${jde.project.file} was not set.");
     }
-
-    // Get the list of dependencies for the project.
-    ProjectDependencyFactory projectDependencyFactory = new ProjectDependencyFactory(
-        getLog(), mArtifactFactory, mArtifactResolver, mLocalArtifactRepository, mMavenProject);
-    ProjectDependencyReader dependencyReader
-        = new ProjectDependencyReader(getLog(), mMavenProject, projectDependencyFactory);
-    Collection<ProjectDependency> dependencies = dependencyReader.getDependencies();
-
-    // Resolve the dependencies' sources.
-    getLog().debug("Dependencies:");
-    for (ProjectDependency dependency : dependencies) {
-      getLog().debug(dependency.toString());
+    // Make sure we know where to unpack javadoc files.
+    if (null == mJavadocDir) {
+      throw new MojoExecutionException("Required property ${jde.javadoc.dir} was not set.");
     }
 
+    getLog().debug("Reading local maven environment...");
+    MavenEnvironment mavenEnvironment = new DefaultMavenEnvironment(
+        getLog(), mMavenProject, mArtifactFactory, mArtifactResolver, mLocalArtifactRepository);
 
-    // Build a project file.
-    JdeProjectFileBuilder projectFileBuilder = new JdeProjectFileBuilder()
+    getLog().debug("Resolving project dependencies...");
+    ProjectDependencyFactory dependencyFactory
+        = new ProjectDependencyFactory(mavenEnvironment, mJavadocDir);
+    ProjectDependencyReader dependencyReader
+        = new ProjectDependencyReader(mavenEnvironment, dependencyFactory);
+    Collection<ProjectDependency> dependencies = dependencyReader.getDependencies();
+
+    getLog().debug("Building a JDE project file...");
+    JdeProjectFileBuilder jdeProjectFileBuilder = new JdeProjectFileBuilder()
         .withMavenProject(mMavenProject)
         .withDependencies(dependencies);
-    JdeProjectFile projectFile = projectFileBuilder.build();
+    JdeProjectFile jdeProjectFile = jdeProjectFileBuilder.build();
 
-    // Write the project file.
-    FileOutputStream outputStream = null;
+    getLog().debug("Writing the JDE project file...");
     try {
-      outputStream = new FileOutputStream(mProjectFile);
-      JdeProjectFileWriter projectFileWriter = new JdeProjectFileWriter(outputStream);
-      projectFileWriter.write(projectFile);
-      projectFileWriter.close();
+      writeProjectFile(jdeProjectFile, mProjectFile);
     } catch (IOException e) {
-      throw new MojoExecutionException("Unable to write project file", e);
+      throw new MojoExecutionException(
+          "Error writing project file to " + mProjectFile.getPath(), e);
+    }
+  }
+
+  /**
+   * Writes a JDE project file to the filesystem at a specified location.
+   *
+   * @param projectFile The JDE project file to write.
+   * @param targetFile The target file in the filesystem.
+   * @throws IOException If there is an error.
+   */
+  private static void writeProjectFile(JdeProjectFile projectFile, File targetFile)
+      throws IOException {
+    JdeProjectFileWriter writer = null;
+    try {
+      writer = new JdeProjectFileWriter(new FileOutputStream(targetFile));
+      writer.write(projectFile);
     } finally {
-      if (null != outputStream) {
-        try {
-          outputStream.close();
-        } catch (IOException e) {
-          throw new MojoExecutionException("Unable to close project file", e);
-        }
+      if (null != writer) {
+        writer.close();
       }
     }
   }

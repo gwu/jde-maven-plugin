@@ -3,49 +3,31 @@
 package com.garrettwu.maven.plugins.jde;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 
 /**
  * A factory capable of creating project dependencies from a maven project.
  */
-public class ProjectDependencyFactory {
-  /** The maven logger. */
-  private final Log mLog;
-
-  /** A factory for maven artifacts. */
-  private final ArtifactFactory mArtifactFactory;
-
-  /** A utility that resolves artifacts (possibly downloading into the local repository). */
-  private final ArtifactResolver mArtifactResolver;
-
-  /** The local maven repository. */
-  private final ArtifactRepository mLocalArtifactRepository;
-
-  /** The maven project. */
-  private final MavenProject mMavenProject;
+public class ProjectDependencyFactory extends MavenClient {
+  /** The directory where javadoc should be unpacked. */
+  private final File mJavadocDir;
 
   /**
    * Creates a new <code>ProjectDependencyFactory</code> instance.
    *
-   * @param log The maven logger.
-   * @param artifactFactory A maven artifact factory.
-   * @param artifactResolver A maven artifact resolver.
+   * @param mavenEnvironment The maven environment.
+   * @param javadocDir The directory to unpack javadoc contents to.
    */
-  public ProjectDependencyFactory(Log log, ArtifactFactory artifactFactory,
-      ArtifactResolver artifactResolver, ArtifactRepository localArtifactRepository,
-      MavenProject mavenProject) {
-    mLog = log;
-    mArtifactFactory = artifactFactory;
-    mArtifactResolver = artifactResolver;
-    mLocalArtifactRepository = localArtifactRepository;
-    mMavenProject = mavenProject;
+  public ProjectDependencyFactory(MavenEnvironment mavenEnvironment, File javadocDir) {
+    super(mavenEnvironment);
+    mJavadocDir = javadocDir;
   }
 
   /**
@@ -56,7 +38,7 @@ public class ProjectDependencyFactory {
    */
   public ProjectDependency createFromArtifact(Artifact artifact) {
     String groupId = artifact.getGroupId();
-    String artifactId = artifact.getId();
+    String artifactId = artifact.getArtifactId();
     String version = artifact.getVersion();
     String classPath = getClassPath(artifact);
     if (null == groupId || null == artifactId || null == version || null == classPath) {
@@ -74,20 +56,20 @@ public class ProjectDependencyFactory {
    */
   private String getSourcePath(Artifact artifact) {
     // Get the sources jar artifact.
-    Artifact sourcesJarArtifact = mArtifactFactory.createArtifactWithClassifier(
-        artifact.getGroupId(), artifact.getId(), artifact.getVersion(),
-        "jar", "sources");
+    Artifact sourcesJarArtifact = getArtifactFactory().createArtifactWithClassifier(
+        artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+        "java-source", "sources");
     // Resolve it.
     try {
-      mArtifactResolver.resolve(sourcesJarArtifact,
-          mMavenProject.getRemoteArtifactRepositories(),
-          mLocalArtifactRepository);
+      getArtifactResolver().resolve(sourcesJarArtifact,
+          getCurrentProject().getRemoteArtifactRepositories(),
+          getLocalArtifactRepository());
     } catch (AbstractArtifactResolutionException e) {
-      mLog.info("Unable to find sources for artifact: " + artifact.toString());
+      getLog().info("Unable to find sources for artifact: " + artifact.toString());
     }
     File file = sourcesJarArtifact.getFile();
     if (null == file) {
-      mLog.info("No sources jar file found for artifact: " + artifact.toString());
+      getLog().info("No sources jar file found for artifact: " + artifact.toString());
       return null;
     }
     return file.getPath();
@@ -113,8 +95,54 @@ public class ProjectDependencyFactory {
    * @param artifact An artifact.
    * @return A url or path to the javadoc (or null if unknown).
    */
-  private static String getJavadocPath(Artifact artifact) {
-    // TODO
-    return null;
+  private String getJavadocPath(Artifact artifact) {
+    // Get the javadoc jar artifact.
+    Artifact javadocJarArtifact = getArtifactFactory().createArtifactWithClassifier(
+        artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+        "java-source", "javadoc");
+    // Resolve it.
+    try {
+      getArtifactResolver().resolve(javadocJarArtifact,
+          getCurrentProject().getRemoteArtifactRepositories(),
+          getLocalArtifactRepository());
+    } catch (AbstractArtifactResolutionException e) {
+      getLog().info("Unable to find javadoc for artifact: " + artifact.toString());
+    }
+    File file = javadocJarArtifact.getFile();
+    if (null == file || !file.exists()) {
+      getLog().info("No javadoc jar file found for artifact: " + artifact.toString());
+      return null;
+    }
+
+    File artifactJavadocDir = new File(mJavadocDir, artifact.getArtifactId());
+    try {
+      unpackJar(file, artifactJavadocDir);
+    } catch (IOException e) {
+      getLog().error("Unable to unpack javadoc jar for artifact: " + artifact.toString());
+    }
+
+    return artifactJavadocDir.getPath();
+  }
+
+  /**
+   * Unpacks a jar file into a target directory.
+   *
+   * @param jarFile The jar to unpack.
+   * @param targetDirectory The directory to put the unpacked contents in.
+   */
+  private void unpackJar(File jarFile, File targetDirectory) throws IOException {
+    getLog().info("Unpacking javadoc jar " + jarFile.getPath()
+        + " into " + targetDirectory.getPath());
+    JarFile jar = new JarFile(jarFile);
+    for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements();) {
+      JarEntry entry = entries.nextElement();
+      File outputFile = new File(targetDirectory, entry.getName());
+      if (entry.isDirectory()) {
+        outputFile.mkdir();
+      } else {
+        FileUtils.copyInputStreamToFile(jar.getInputStream(entry), outputFile);
+      }
+    }
+    jar.close();
   }
 }

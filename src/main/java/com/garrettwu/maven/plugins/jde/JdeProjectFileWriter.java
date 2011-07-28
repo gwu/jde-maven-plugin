@@ -105,7 +105,11 @@ public class JdeProjectFileWriter implements Closeable {
                                             new Function<String, LispElement>() {
                                               @Override
                                               public LispElement apply(String from) {
-                                                return new LispString(from);
+                                                return new LispList(
+                                                    Arrays.<LispElement>asList(
+                                                        new LispString("User (javadoc)"),
+                                                        new LispString(from),
+                                                        new LispIdentifier("nil")));
                                               }
                                             }))))))))));
 

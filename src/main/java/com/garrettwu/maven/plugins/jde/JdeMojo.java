@@ -19,7 +19,7 @@ import org.apache.maven.project.MavenProject;
  * Goal which generates a prj.el file used by the Emacs JDE package.
  *
  * @goal jde
- * @requiresDependencyResolution compile
+ * @requiresDependencyResolution test
  */
 public class JdeMojo extends AbstractMojo {
   /**

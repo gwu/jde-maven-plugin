@@ -17,6 +17,9 @@ jde-maven-plugin - A maven plugin for Emacs JDE users.
 
 To build the plugin:
 
+    First, clone and install the gwu-lisp maven artifact.  See
+    http://github.com/gwu/gwu-lisp for instructions.
+
     Run 'mvn package' to build target/jde-maven-plugin-${version}.jar.
 
 

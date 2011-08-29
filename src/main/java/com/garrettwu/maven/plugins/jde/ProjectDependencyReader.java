@@ -40,7 +40,7 @@ public class ProjectDependencyReader extends MavenClient {
     // only run 'mvn compile', this method won't return test-scope dependencies.
     //
     // TODO: Should we explicitly run the compile phase before we call this method?
-    Set<?> dependencyArtifacts = getCurrentProject().getDependencyArtifacts();
+    Set<?> dependencyArtifacts = getCurrentProject().getArtifacts();
 
     // Convert the artifacts to project dependencies.
     Collection<ProjectDependency> dependencies

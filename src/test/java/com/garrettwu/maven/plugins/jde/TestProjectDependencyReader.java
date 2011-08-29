@@ -26,7 +26,7 @@ public class TestProjectDependencyReader {
     Set<Artifact> cannedArtifacts = new HashSet<Artifact>();
     cannedArtifacts.add(artifact1);
     cannedArtifacts.add(artifact2);
-    expect(mavenEnvironment.getCurrentProject().getDependencyArtifacts())
+    expect(mavenEnvironment.getCurrentProject().getArtifacts())
         .andReturn(cannedArtifacts)
         .anyTimes();
     ProjectDependency dependency1 = new ProjectDependency("a", "b", "c", "x", "y", "z");

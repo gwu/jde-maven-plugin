@@ -29,18 +29,26 @@ public class ProjectDependencyReader extends MavenClient {
   }
 
   /**
-   * Gets the transitive dependencies for the project.
+   * Gets the dependencies for the project.
    *
-   * @return The collection of transitive dependencies for the project.
+   * @param transitive Whether transitive dependencies should also be returned.
+   * @return The collection of dependencies for the project.
    * @throws MojoExecutionException If there is an error while getting dependencies.
    */
-  public Collection<ProjectDependency> getDependencies() throws MojoExecutionException {
-    // The following method is lazy when getting artifacts.  It will only return
+  public Collection<ProjectDependency> getDependencies(boolean transitive)
+      throws MojoExecutionException {
+    Set<?> dependencyArtifacts;
+
+    // The following methods are lazy when getting artifacts.  They will only return
     // dependency artifacts for scopes that have already been run.  For example, if you've
     // only run 'mvn compile', this method won't return test-scope dependencies.
     //
     // TODO: Should we explicitly run the compile phase before we call this method?
-    Set<?> dependencyArtifacts = getCurrentProject().getArtifacts();
+    if (transitive) {
+      dependencyArtifacts = getCurrentProject().getArtifacts();
+    } else {
+      dependencyArtifacts = getCurrentProject().getDependencyArtifacts();
+    }
 
     // Convert the artifacts to project dependencies.
     Collection<ProjectDependency> dependencies

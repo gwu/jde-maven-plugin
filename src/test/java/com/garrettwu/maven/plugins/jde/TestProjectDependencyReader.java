@@ -23,16 +23,22 @@ public class TestProjectDependencyReader {
     ProjectDependencyFactory projectDependencyFactory = createMock(ProjectDependencyFactory.class);
 
     // Set mock expectations.
-    Set<Artifact> cannedArtifacts = new HashSet<Artifact>();
-    cannedArtifacts.add(artifact1);
-    cannedArtifacts.add(artifact2);
+    Set<Artifact> directArtifacts = new HashSet<Artifact>();
+    Set<Artifact> transitiveArtifacts = new HashSet<Artifact>();
+    directArtifacts.add(artifact1);
+    transitiveArtifacts.add(artifact1);
+    transitiveArtifacts.add(artifact2);
+    expect(mavenEnvironment.getCurrentProject().getDependencyArtifacts())
+        .andReturn(directArtifacts);
     expect(mavenEnvironment.getCurrentProject().getArtifacts())
-        .andReturn(cannedArtifacts)
-        .anyTimes();
+        .andReturn(transitiveArtifacts);
     ProjectDependency dependency1 = new ProjectDependency("a", "b", "c", "x", "y", "z");
     ProjectDependency dependency2 = new ProjectDependency("d", "e", "f", "u", "v", "w");
-    expect(projectDependencyFactory.createFromArtifact(artifact1)).andReturn(dependency1);
-    expect(projectDependencyFactory.createFromArtifact(artifact2)).andReturn(dependency2);
+    expect(projectDependencyFactory.createFromArtifact(artifact1))
+        .andReturn(dependency1)
+        .times(2);
+    expect(projectDependencyFactory.createFromArtifact(artifact2))
+        .andReturn(dependency2);
 
     mavenEnvironment.replay();
     replay(artifact1);
@@ -42,7 +48,8 @@ public class TestProjectDependencyReader {
     // Get the dependencies.
     ProjectDependencyReader dependencyReader
         = new ProjectDependencyReader(mavenEnvironment, projectDependencyFactory);
-    Collection<ProjectDependency> dependencies = dependencyReader.getDependencies();
+    Collection<ProjectDependency> directDependencies = dependencyReader.getDependencies(false);
+    Collection<ProjectDependency> transitiveDependencies = dependencyReader.getDependencies(true);
 
     mavenEnvironment.verify();
     verify(artifact1);
@@ -50,8 +57,11 @@ public class TestProjectDependencyReader {
     verify(projectDependencyFactory);
 
     // Verify the dependencies.
-    assertEquals(2, dependencies.size());
-    assertTrue(dependencies.contains(dependency1));
-    assertTrue(dependencies.contains(dependency2));
+    assertEquals(1, directDependencies.size());
+    assertTrue(directDependencies.contains(dependency1));
+
+    assertEquals(2, transitiveDependencies.size());
+    assertTrue(transitiveDependencies.contains(dependency1));
+    assertTrue(transitiveDependencies.contains(dependency2));
   }
 }

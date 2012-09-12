@@ -36,5 +36,23 @@ After installing, to use the plugin in another maven project:
 
 Customizing behavior:
 
-    See com.garrettwu.maven.plugins.jde.JdeMojo.java for a list of
+    By default, only direct dependencies are fetched and included in
+    generated prj.el. To include transitive dependencies as well, add
+    '-Djde.transitive.mode=true' to the command in the previous
+    section. To make this the default behavior, add the following
+    to your ~/.m2/settings.xml:
+
+    <profiles>
+      <profile>
+        <id>jde-maven-plugin</id>
+        <properties>
+          <jde.transitive.mode>true</jde.transitive.mode>
+        </properties>
+      </profile>
+    </profiles>
+    <activeProfiles>
+      <activeProfile>jde-maven-plugin</activeProfile>
+    </activeProfiles>
+
+    See com.garrettwu.maven.plugins.jde.JdeMojo.java for other
     properties and their usage.

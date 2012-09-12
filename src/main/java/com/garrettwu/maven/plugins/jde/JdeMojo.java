@@ -79,6 +79,14 @@ public class JdeMojo extends AbstractMojo {
   private File mJavadocPathsFile;
 
   /**
+   * Include transitive dependencies in generated prj.el.
+   *
+   * @parameter property="transitiveMode" expression="${jde.transitive.mode}" default-value="false"
+   * @required
+   */
+  private boolean mTransitiveMode;
+
+  /**
    * Sets the maven project this mojo works over.
    *
    * <p>The plugin framework will call this method with the correct maven project.</p>
@@ -123,6 +131,15 @@ public class JdeMojo extends AbstractMojo {
   }
 
   /**
+   * Determines whether to include transitive dependencies in generated prj.el
+   *
+   * @param transitiveMode whether transitive mode should be enabled
+   */
+  public void setTransitiveMode(boolean transitiveMode) {
+    mTransitiveMode = transitiveMode;
+  }
+
+  /**
    * Executes the plugin's goal to generate a JDE project file.
    *
    * @throws MojoExecutionException If there is a fatal error during execution of the plugin.
@@ -160,7 +177,8 @@ public class JdeMojo extends AbstractMojo {
         = new ProjectDependencyFactory(mavenEnvironment, mJavadocDir, javadocUserPathMapping);
     ProjectDependencyReader dependencyReader
         = new ProjectDependencyReader(mavenEnvironment, dependencyFactory);
-    Collection<ProjectDependency> dependencies = dependencyReader.getDependencies();
+    Collection<ProjectDependency> dependencies =
+      dependencyReader.getDependencies(mTransitiveMode);
 
     getLog().info("Building a JDE project file...");
     JdeProjectFileBuilder jdeProjectFileBuilder = new JdeProjectFileBuilder()
